@@ -9,21 +9,41 @@ import { loadBooks, setBooksLoading } from './books.actions';
 import BooksList from '../components/BooksList';
 import BookDetails from '../components/BookDetails';
 import { AppState, BooksState } from '../redux/state';
+import { AuthUser } from '../users/interfaces';
+import { getUserId, isUserClient } from '../users/functions';
+import { updateOrder } from '../orders/orders.actions';
 
 interface BookUrlParams {
-  bookId: string | undefined,
+  bookId?: string,
 }
 
 export interface BooksWrapperProps extends RouteComponentProps<BookUrlParams> {
   books: BooksState,
   dispatch: ThunkDispatch<AppState, void, AnyAction>,
+  authUser?: AuthUser,
 }
 
 class Books extends Component<BooksWrapperProps> {
+  constructor(props: BooksWrapperProps) {
+    super(props);
+    this.handleAddToCart = this.handleAddToCart.bind(this);
+  }
+
   componentDidMount() {
-    const { dispatch } = this.props;
-    dispatch(setBooksLoading(true));
-    dispatch(loadBooks());
+    const { dispatch, books: { list: booksList } } = this.props;
+    if (!booksList) {
+      dispatch(setBooksLoading(true));
+      dispatch(loadBooks());
+    }
+  }
+
+  handleAddToCart(count: number, bookId: number) {
+    const { authUser, dispatch } = this.props;
+    const userId = getUserId(authUser);
+
+    if (userId) {
+      dispatch(updateOrder(count, bookId, userId));
+    }
   }
 
   render() {
@@ -33,11 +53,13 @@ class Books extends Component<BooksWrapperProps> {
         isLoading,
       },
       match: { params: { bookId } },
+      authUser,
     } = this.props;
+    const isClient = isUserClient(authUser);
 
     if (isLoading) {
       return (
-        <Backdrop open>
+        <Backdrop open addEndListener={() => null}>
           <CircularProgress color="primary" />
         </Backdrop>
       );
@@ -54,18 +76,21 @@ class Books extends Component<BooksWrapperProps> {
         return <div>Sorry book you are looking for is no longer available</div>;
       }
 
-      return <BookDetails book={book} />;
+      return (
+        <BookDetails book={book} handleAddToCart={isClient ? this.handleAddToCart : undefined} />
+      );
     }
 
     return <BooksList books={booksList} />;
   }
 }
-
+// @TODO add return type
 const mapStateToProps = (state: AppState) => ({
   books: state.books,
+  authUser: state.users.authUser,
 });
-
-const mapDispatchToProps = (dispatch: ThunkDispatch<AppState, void, AnyAction>): any => ({
+// @TODO add return type
+const mapDispatchToProps = (dispatch: ThunkDispatch<AppState, void, AnyAction>) => ({
   dispatch,
 });
 

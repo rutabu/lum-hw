@@ -1,17 +1,30 @@
-import React from 'react';
+import React, { FC, MouseEvent, useState } from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import {
-  Badge,
-  MenuItem,
-  Menu,
-  IconButton,
-  Button,
-  Typography,
-  Toolbar,
   AppBar,
+  Badge,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
 } from '@material-ui/core';
-import { ShoppingCartRounded, AccountCircle } from '@material-ui/icons';
-import { useHistory, Link } from 'react-router-dom';
+import { AccountCircle, ShoppingCartRounded } from '@material-ui/icons';
+import { Link, useHistory } from 'react-router-dom';
+import { ThunkDispatch } from 'redux-thunk';
+import { AnyAction } from 'redux';
+import { connect } from 'react-redux';
+import { AppState } from '../redux/state';
+import Login from './Login';
+import { AuthUser } from '../users/interfaces';
+import {
+  loadStoredAuthUser,
+  setUsersLoading,
+  userLogin,
+  userLogout,
+} from '../users/users.actions';
+import { isUserAdmin, isUserClient } from '../users/functions';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -26,13 +39,30 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   },
 }));
 
-export default function ButtonAppBar() {
+export interface HeaderProps {
+  dispatch: ThunkDispatch<AppState, void, AnyAction>,
+  isLoading: boolean,
+  loginFailed: boolean,
+  authUser?: AuthUser,
+}
+
+const Header: FC<HeaderProps> = (props: HeaderProps) => {
+  const {
+    isLoading,
+    loginFailed,
+    authUser,
+    dispatch,
+  } = props;
   const history = useHistory();
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+  if (!authUser) {
+    dispatch(loadStoredAuthUser());
+  }
+
+  const handleMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -44,9 +74,22 @@ export default function ButtonAppBar() {
     history.push('/');
   };
 
-  const handleShoppingCart = () => {
-    history.push('/order');
+  const handleShoppingCartClick = () => {
+    history.push('/order/new');
   };
+
+  const handleUserLogin = (username: string, password: string) => {
+    dispatch(setUsersLoading(true));
+    dispatch(userLogin(username, password));
+  };
+
+  const handleUserLogout = () => {
+    dispatch(userLogout());
+    history.push('/');
+  };
+
+  const isAdmin = isUserAdmin(authUser);
+  const isClient = isUserClient(authUser);
 
   return (
     <div className={classes.root}>
@@ -57,44 +100,87 @@ export default function ButtonAppBar() {
               Home
             </Button>
           </Typography>
-          <Button color="inherit">Login</Button>
-          <div>
-            <IconButton
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleMenu}
-              color="inherit"
-            >
-              <AccountCircle />
+          {!authUser && (
+            <Login
+              handleUserLogin={handleUserLogin}
+              isLoading={isLoading}
+              loginFailed={loginFailed}
+            />
+          )}
+          {authUser && (
+            <div>
+              <IconButton
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={open}
+                onClose={handleClose}
+              >
+                {isAdmin && (
+                  <>
+                    <MenuItem onClick={handleClose}><Link to="/books">Books</Link></MenuItem>
+                    <MenuItem onClick={handleClose}><Link to="/users">Users</Link></MenuItem>
+                  </>
+                )}
+                {isClient && (
+                  <MenuItem onClick={handleClose}><Link to="/profile">Profile</Link></MenuItem>
+                )}
+                <MenuItem onClick={handleClose}><Link to="/orders">Orders</Link></MenuItem>
+                <MenuItem onClick={handleClose}>
+                  <Button
+                    onClick={handleUserLogout}
+                    color="secondary"
+                    variant="contained"
+                    fullWidth
+                  >
+                    Logout
+                  </Button>
+                </MenuItem>
+              </Menu>
+            </div>
+          )}
+          {isClient && (
+            <IconButton aria-label="Shopping cart" color="inherit" onClick={handleShoppingCartClick}>
+              <Badge badgeContent={4} color="secondary">
+                <ShoppingCartRounded />
+              </Badge>
             </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorEl}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={open}
-              onClose={handleClose}
-            >
-              <MenuItem onClick={handleClose}><Link to="/">Books</Link></MenuItem>
-              <MenuItem onClick={handleClose}><Link to="/users">Users</Link></MenuItem>
-              <MenuItem onClick={handleClose}><Link to="/users">Orders</Link></MenuItem>
-            </Menu>
-          </div>
-          <IconButton aria-label="Shopping cart" color="inherit" onClick={handleShoppingCart}>
-            <Badge badgeContent={4} color="secondary">
-              <ShoppingCartRounded />
-            </Badge>
-          </IconButton>
+          )}
         </Toolbar>
       </AppBar>
     </div>
   );
-}
+};
+
+// @TODO add return type
+const mapStateToProps = (state: AppState) => ({
+  isLoading: state.users.isLoading,
+  loginFailed: state.users.loginFailed,
+  authUser: state.users.authUser,
+});
+// @TODO add return type
+const mapDispatchToProps = (dispatch: ThunkDispatch<AppState, void, AnyAction>) => ({
+  dispatch,
+});
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Header);

@@ -7,6 +7,8 @@ export interface User {
   role: USER_ROLE_TYPE,
 }
 
+export type AuthUser = Pick<User, 'id' | 'name' | 'surname' | 'role'>;
+
 export enum USER_ROLE_TYPE {
   ADMIN = 'admin',
   CLIENT = 'client',

@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Books from './books/Books';
 import Users from './users/Users';
+import Orders from './orders/Orders';
 
 const App: FC = () => (
   <>
@@ -17,8 +18,11 @@ const App: FC = () => (
         <Container maxWidth="lg">
           <Switch>
             <Route exact path="/" component={Books} />
+            <Route exact path="/books" component={Books} />
             <Route exact path="/book/:bookId" component={Books} />
             <Route path="/users" component={Users} />
+            <Route path="/orders" component={Orders} />
+            <Route path="/order/new" component={Orders} />
           </Switch>
         </Container>
       </Box>

@@ -1,6 +1,8 @@
+import { find, pick, findIndex } from 'lodash';
 import { Book } from '../books/interfaces';
 import { sleep } from './helpers';
-import { User, USER_ROLE_TYPE } from '../users/interfaces';
+import { AuthUser, User, USER_ROLE_TYPE } from '../users/interfaces';
+import { Order, ORDER_STATUS_TYPE, OrderBookItem } from '../orders/interfaces';
 
 const DB_KEY_BOOKS = 'books';
 const DB_KEY_USERS = 'users';
@@ -35,8 +37,7 @@ export async function updateBooksList(books: Book[]) {
   return true;
 }
 
-export async function getUsers(): Promise<User[] | undefined> {
-  await sleep();
+function getUsersFromDB(): User[] | undefined {
   const item = fetchItemFromLocalStorage(DB_KEY_USERS);
 
   if (!item) {
@@ -52,11 +53,154 @@ export async function getUsers(): Promise<User[] | undefined> {
   return users;
 }
 
+export async function getUsers(): Promise<User[] | undefined> {
+  return getUsersFromDB();
+}
+
+export async function getAuthUser(
+  username: string,
+  password: string,
+): Promise<AuthUser | undefined> {
+  const users = getUsersFromDB();
+  const user = find(users, { username, password });
+  await sleep();
+
+  return user
+    ? pick(user, ['id', 'name', 'surname', 'role']) as AuthUser
+    : undefined;
+}
+
+export function getLoggedInAuthUser(): AuthUser | undefined {
+  const item = fetchItemFromLocalStorage(DB_KEY_AUTH_USER);
+
+  if (!item) {
+    return undefined;
+  }
+
+  const authUsers: AuthUser = JSON.parse(item);
+
+  if (!authUsers) {
+    return undefined;
+  }
+
+  return authUsers;
+}
+
+export function storeAuthUser(user: AuthUser) {
+  localStorage.setItem(DB_KEY_AUTH_USER, JSON.stringify(user));
+}
+
+export function removeStoredAuthUser() {
+  localStorage.removeItem(DB_KEY_AUTH_USER);
+}
+
 export async function updateUsersList(users: User[]) {
   await sleep();
   localStorage.setItem(DB_KEY_USERS, JSON.stringify(users));
   // update was successful
   return true;
+}
+
+function getOrdersFromDB(): Order[] | [] {
+  const item = fetchItemFromLocalStorage(DB_KEY_ORDERS);
+
+  if (!item) {
+    return [];
+  }
+
+  const orders: Order[] = JSON.parse(item);
+
+  if (!orders) {
+    return [];
+  }
+
+  return orders;
+}
+
+export function storeOrders(orders?: Order[]) {
+  localStorage.setItem(DB_KEY_ORDERS, JSON.stringify(orders));
+}
+
+export async function getOrders(): Promise<Order[]> {
+  return getOrdersFromDB();
+}
+
+function getUpdatedOrderBooksList(
+  count: number,
+  bookId: number,
+  orderBooks: OrderBookItem[],
+): OrderBookItem[] {
+  const orderBook = {
+    bookId,
+    count,
+  };
+
+  // first book in order
+  if (orderBooks.length === 0) {
+    return [
+      { ...orderBook },
+    ];
+  }
+
+  const editableOrderBookIndex = findIndex(orderBooks, { bookId });
+
+  // new book in order
+  if (editableOrderBookIndex === -1) {
+    return [
+      ...orderBooks,
+      { ...orderBook },
+    ];
+  }
+
+  // updating existing book count
+  return [
+    ...orderBooks.slice(0, editableOrderBookIndex),
+    { ...orderBook },
+    ...orderBooks.slice(editableOrderBookIndex + 1),
+  ];
+}
+
+export async function getUpdatedOrders(
+  count: number,
+  bookId: number,
+  userId: number,
+): Promise<Order[]> {
+  const orders = getOrdersFromDB();
+  const editableUserOrderIndex = findIndex(orders, { userId, status: ORDER_STATUS_TYPE.NEW });
+  const orderId = editableUserOrderIndex !== -1
+    ? orders[editableUserOrderIndex].id
+    : orders.length;
+  const orderBooks = editableUserOrderIndex !== -1 ? orders[editableUserOrderIndex].books : [];
+  const books = getUpdatedOrderBooksList(count, bookId, orderBooks);
+
+  const newOrder: Order = {
+    id: orderId,
+    userId,
+    status: ORDER_STATUS_TYPE.NEW,
+    books,
+  };
+
+  // first order
+  if (orders.length === 0) {
+    return [
+      { ...newOrder },
+    ];
+  }
+
+  // append new order
+  if (editableUserOrderIndex === -1) {
+    return [
+      ...orders,
+      { ...newOrder },
+    ];
+  }
+
+  // update existing one
+  return [
+    ...orders.slice(0, editableUserOrderIndex),
+    { ...newOrder },
+    ...orders.slice(editableUserOrderIndex + 1),
+  ];
 }
 
 export const populateDatabase = () => {
@@ -128,8 +272,16 @@ export const populateDatabase = () => {
         id: 2,
         name: 'John',
         surname: 'Doe',
-        username: 'client',
-        password: 'client',
+        username: 'client1',
+        password: 'client1',
+        role: USER_ROLE_TYPE.CLIENT,
+      },
+      {
+        id: 3,
+        name: 'Kate',
+        surname: 'Green',
+        username: 'client2',
+        password: 'client2',
         role: USER_ROLE_TYPE.CLIENT,
       },
     ];

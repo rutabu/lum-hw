@@ -1,16 +1,23 @@
-import React, { FC } from 'react';
-import { Grid } from '@material-ui/core';
+import React, { FC, useState } from 'react';
+import { Button, Grid } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
+import { AddBox, IndeterminateCheckBox } from '@material-ui/icons';
 import { Book } from '../books/interfaces';
 
 interface BookDetailsProps {
-  book: Book;
+  book: Book,
+  handleAddToCart?: (count: number, bookId: number) => void,
 }
 
-const BookDetails: FC<BookDetailsProps> = ({ book }: BookDetailsProps): JSX.Element => {
+const BookDetails: FC<BookDetailsProps> = ({
+  book,
+  handleAddToCart,
+}: BookDetailsProps): JSX.Element => {
+  const [count, setCount] = useState(0);
   const {
+    id,
     bookCover,
     title,
     author,
@@ -39,6 +46,18 @@ const BookDetails: FC<BookDetailsProps> = ({ book }: BookDetailsProps): JSX.Elem
               <strong>Availibility: </strong>
               {quantity}
             </Typography>
+            {handleAddToCart && (
+              <>
+                <br />
+                <IndeterminateCheckBox onClick={() => setCount(count - 1)} />
+                {count}
+                <AddBox onClick={() => setCount(count + 1)} />
+                <br />
+                <Button onClick={() => handleAddToCart(count, id)} color="secondary" variant="contained">
+                  Add to cart
+                </Button>
+              </>
+            )}
           </Grid>
         </Grid>
       </Box>

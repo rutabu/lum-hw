@@ -12,6 +12,7 @@ import { AppState, BooksState } from '../redux/state';
 import { AuthUser } from '../users/interfaces';
 import { getUserId, isUserClient } from '../users/functions';
 import { updateOrder } from '../orders/orders.actions';
+import { Book } from './interfaces';
 
 interface BookUrlParams {
   bookId?: string,
@@ -37,12 +38,12 @@ class Books extends Component<BooksWrapperProps> {
     }
   }
 
-  handleAddToCart(count: number, bookId: number) {
+  handleAddToCart(count: number, book: Book) {
     const { authUser, dispatch } = this.props;
     const userId = getUserId(authUser);
 
-    if (userId) {
-      dispatch(updateOrder(count, bookId, userId));
+    if (typeof userId !== 'undefined') {
+      dispatch(updateOrder(count, book, userId));
     }
   }
 

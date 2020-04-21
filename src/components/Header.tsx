@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import { AccountCircle, ShoppingCartRounded } from '@material-ui/icons';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { ThunkDispatch } from 'redux-thunk';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
@@ -70,14 +70,6 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
     setAnchorEl(null);
   };
 
-  const handleHome = () => {
-    history.push('/');
-  };
-
-  const handleShoppingCartClick = () => {
-    history.push('/order/new');
-  };
-
   const handleUserLogin = (username: string, password: string) => {
     dispatch(setUsersLoading(true));
     dispatch(userLogin(username, password));
@@ -96,7 +88,7 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
       <AppBar position="fixed">
         <Toolbar>
           <Typography variant="h6" className={classes.title}>
-            <Button color="inherit" onClick={handleHome}>
+            <Button color="inherit" onClick={() => history.push('/')}>
               Home
             </Button>
           </Typography>
@@ -134,15 +126,21 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
                 onClose={handleClose}
               >
                 {isAdmin && (
-                  <>
-                    <MenuItem onClick={handleClose}><Link to="/books">Books</Link></MenuItem>
-                    <MenuItem onClick={handleClose}><Link to="/users">Users</Link></MenuItem>
-                  </>
+                  <MenuItem onClick={() => { history.push('/users'); handleClose(); }}>
+                    Users
+                  </MenuItem>
                 )}
                 {isClient && (
-                  <MenuItem onClick={handleClose}><Link to="/profile">Profile</Link></MenuItem>
+                  <MenuItem onClick={() => { history.push('/profile'); handleClose(); }}>
+                    Profile
+                  </MenuItem>
                 )}
-                <MenuItem onClick={handleClose}><Link to="/orders">Orders</Link></MenuItem>
+                <MenuItem onClick={() => { history.push('/books'); handleClose(); }}>
+                  Books
+                </MenuItem>
+                <MenuItem onClick={() => { history.push('/orders'); handleClose(); }}>
+                  Orders
+                </MenuItem>
                 <MenuItem onClick={handleClose}>
                   <Button
                     onClick={handleUserLogout}
@@ -157,7 +155,7 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
             </div>
           )}
           {isClient && (
-            <IconButton aria-label="Shopping cart" color="inherit" onClick={handleShoppingCartClick}>
+            <IconButton aria-label="Shopping cart" color="inherit" onClick={() => history.push('/order/new')}>
               <Badge badgeContent={4} color="secondary">
                 <ShoppingCartRounded />
               </Badge>

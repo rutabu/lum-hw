@@ -1,13 +1,14 @@
+import { Book } from '../books/interfaces';
+
 export interface Order {
   id: number,
   userId: number,
   status: ORDER_STATUS_TYPE,
-  books: OrderBookItem[],
+  books: OrderBook[],
 }
 
-export interface OrderBookItem {
-  bookId: number,
-  count: number
+export interface OrderBook extends Book {
+  countOrdered: number,
 }
 
 export enum ORDER_STATUS_TYPE {

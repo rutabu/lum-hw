@@ -22,7 +22,7 @@ const App: FC = () => (
             <Route exact path="/book/:bookId" component={Books} />
             <Route path="/users" component={Users} />
             <Route path="/orders" component={Orders} />
-            <Route path="/order/new" component={Orders} />
+            <Route path="/order/:orderId" component={Orders} />
           </Switch>
         </Container>
       </Box>

@@ -1,8 +1,8 @@
-import { find, pick, findIndex } from 'lodash';
+import { find, findIndex, pick } from 'lodash';
 import { Book } from '../books/interfaces';
 import { sleep } from './helpers';
 import { AuthUser, User, USER_ROLE_TYPE } from '../users/interfaces';
-import { Order, ORDER_STATUS_TYPE, OrderBookItem } from '../orders/interfaces';
+import { Order, ORDER_STATUS_TYPE, OrderBook } from '../orders/interfaces';
 
 const DB_KEY_BOOKS = 'books';
 const DB_KEY_USERS = 'users';
@@ -122,17 +122,19 @@ export function storeOrders(orders?: Order[]) {
 }
 
 export async function getOrders(): Promise<Order[]> {
+  await sleep();
+
   return getOrdersFromDB();
 }
 
 function getUpdatedOrderBooksList(
-  count: number,
-  bookId: number,
-  orderBooks: OrderBookItem[],
-): OrderBookItem[] {
-  const orderBook = {
-    bookId,
-    count,
+  countOrdered: number,
+  book: Book,
+  orderBooks: OrderBook[],
+): OrderBook[] {
+  const orderBook: OrderBook = {
+    ...book,
+    countOrdered,
   };
 
   // first book in order
@@ -142,13 +144,21 @@ function getUpdatedOrderBooksList(
     ];
   }
 
-  const editableOrderBookIndex = findIndex(orderBooks, { bookId });
+  const editableOrderBookIndex = findIndex(orderBooks, { id: book.id });
 
   // new book in order
   if (editableOrderBookIndex === -1) {
     return [
       ...orderBooks,
       { ...orderBook },
+    ];
+  }
+
+  // if count is 0 - remove book from the list
+  if (countOrdered === 0) {
+    return [
+      ...orderBooks.slice(0, editableOrderBookIndex),
+      ...orderBooks.slice(editableOrderBookIndex + 1),
     ];
   }
 
@@ -162,16 +172,17 @@ function getUpdatedOrderBooksList(
 
 export async function getUpdatedOrders(
   count: number,
-  bookId: number,
+  book: Book,
   userId: number,
 ): Promise<Order[]> {
+  await sleep();
   const orders = getOrdersFromDB();
   const editableUserOrderIndex = findIndex(orders, { userId, status: ORDER_STATUS_TYPE.NEW });
   const orderId = editableUserOrderIndex !== -1
     ? orders[editableUserOrderIndex].id
     : orders.length;
   const orderBooks = editableUserOrderIndex !== -1 ? orders[editableUserOrderIndex].books : [];
-  const books = getUpdatedOrderBooksList(count, bookId, orderBooks);
+  const books = getUpdatedOrderBooksList(count, book, orderBooks);
 
   const newOrder: Order = {
     id: orderId,
@@ -203,11 +214,32 @@ export async function getUpdatedOrders(
   ];
 }
 
+export async function getUpdatedStatusOrders(
+  orderId: number,
+  status: ORDER_STATUS_TYPE,
+): Promise<Order[]> {
+  const orders = getOrdersFromDB();
+  const editableUserOrderIndex = findIndex(orders, { id: orderId });
+
+  const newOrder: Order = {
+    ...orders[editableUserOrderIndex],
+    status,
+  };
+
+  await sleep();
+
+  return [
+    ...orders.slice(0, editableUserOrderIndex),
+    { ...newOrder },
+    ...orders.slice(editableUserOrderIndex + 1),
+  ];
+}
+
 export const populateDatabase = () => {
   if (!fetchItemFromLocalStorage(DB_KEY_BOOKS)) {
     const books: Book[] = [
       {
-        id: 1,
+        id: 0,
         title: 'First book',
         author: 'John Smith',
         publishedDate: 2015,
@@ -215,7 +247,7 @@ export const populateDatabase = () => {
         quantity: 5,
       },
       {
-        id: 2,
+        id: 1,
         title: 'Second book',
         author: 'Jane Doe',
         publishedDate: 2019,
@@ -223,7 +255,7 @@ export const populateDatabase = () => {
         quantity: 3,
       },
       {
-        id: 3,
+        id: 2,
         title: 'Second book',
         author: 'Jane Doe',
         publishedDate: 2019,
@@ -231,7 +263,7 @@ export const populateDatabase = () => {
         quantity: 3,
       },
       {
-        id: 4,
+        id: 3,
         title: 'Third book',
         author: 'Mark Tomson',
         publishedDate: 2010,
@@ -239,7 +271,7 @@ export const populateDatabase = () => {
         quantity: 7,
       },
       {
-        id: 5,
+        id: 4,
         title: 'City on Fire',
         author: 'Mark Tomson',
         publishedDate: 2010,
@@ -247,7 +279,7 @@ export const populateDatabase = () => {
         quantity: 7,
       },
       {
-        id: 6,
+        id: 5,
         title: 'Speak',
         author: 'Louisa Hall',
         publishedDate: 2010,
@@ -261,7 +293,7 @@ export const populateDatabase = () => {
   if (!fetchItemFromLocalStorage(DB_KEY_USERS)) {
     const users: User[] = [
       {
-        id: 1,
+        id: 0,
         name: 'Jane',
         surname: 'Doe',
         username: 'admin',
@@ -269,7 +301,7 @@ export const populateDatabase = () => {
         role: USER_ROLE_TYPE.ADMIN,
       },
       {
-        id: 2,
+        id: 1,
         name: 'John',
         surname: 'Doe',
         username: 'client1',
@@ -277,7 +309,7 @@ export const populateDatabase = () => {
         role: USER_ROLE_TYPE.CLIENT,
       },
       {
-        id: 3,
+        id: 2,
         name: 'Kate',
         surname: 'Green',
         username: 'client2',

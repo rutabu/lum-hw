@@ -50,9 +50,9 @@ export async function getAuthUser(
   username: string,
   password: string,
 ): Promise<AuthUser | undefined> {
+  await sleep();
   const users = getUsersFromDB();
   const user = find(users, { username, password });
-  await sleep();
 
   return user
     ? pick(user, ['id', 'name', 'surname', 'role']) as AuthUser
@@ -156,6 +156,7 @@ export async function getUpdatedStatusOrders(
   orderId: number,
   status: ORDER_STATUS_TYPE,
 ): Promise<Order[]> {
+  await sleep();
   const orders = getOrdersFromDB();
   const editableUserOrderIndex = findIndex(orders, { id: orderId });
 
@@ -163,8 +164,6 @@ export async function getUpdatedStatusOrders(
     ...orders[editableUserOrderIndex],
     status,
   };
-
-  await sleep();
 
   return [
     ...orders.slice(0, editableUserOrderIndex),

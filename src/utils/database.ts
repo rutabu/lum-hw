@@ -1,8 +1,6 @@
-import { find, findIndex, pick } from 'lodash';
 import { Book } from '../books/interfaces';
-import { sleep } from './helpers';
 import { AuthUser, User, USER_ROLE_TYPE } from '../users/interfaces';
-import { Order, ORDER_STATUS_TYPE, OrderBook } from '../orders/interfaces';
+import { Order } from '../orders/interfaces';
 
 const DB_KEY_BOOKS = 'books';
 const DB_KEY_USERS = 'users';
@@ -13,7 +11,7 @@ function fetchItemFromLocalStorage(key: string) {
   return localStorage.getItem(key);
 }
 
-function getBooksFromDB(): Book[] {
+export function getBooksFromDB(): Book[] {
   const item = fetchItemFromLocalStorage(DB_KEY_BOOKS);
 
   if (!item) {
@@ -29,32 +27,11 @@ function getBooksFromDB(): Book[] {
   return books;
 }
 
-export async function getBooks(): Promise<Book[]> {
-  await sleep();
-  return getBooksFromDB();
-}
-
-export async function getBooksWithRemovedBook(bookId: number): Promise<Book[]> {
-  await sleep();
-  const books = getBooksFromDB();
-
-  const editableBookIndex = findIndex(books, { id: bookId });
-
-  if (editableBookIndex === -1) {
-    return books;
-  }
-
-  return [
-    ...books.slice(0, editableBookIndex),
-    ...books.slice(editableBookIndex + 1),
-  ];
-}
-
 export function storeBooks(books: Book[]) {
   localStorage.setItem(DB_KEY_BOOKS, JSON.stringify(books));
 }
 
-function getUsersFromDB(): User[] {
+export function getUsersFromDB(): User[] {
   const item = fetchItemFromLocalStorage(DB_KEY_USERS);
 
   if (!item) {
@@ -70,41 +47,8 @@ function getUsersFromDB(): User[] {
   return users;
 }
 
-export async function getUsers(): Promise<User[]> {
-  return getUsersFromDB();
-}
-
-export async function getUsersWithRemovedUser(userId: number): Promise<User[]> {
-  await sleep();
-  const users = getUsersFromDB();
-
-  const editableUserIndex = findIndex(users, { id: userId });
-
-  if (editableUserIndex === -1) {
-    return users;
-  }
-
-  return [
-    ...users.slice(0, editableUserIndex),
-    ...users.slice(editableUserIndex + 1),
-  ];
-}
-
 export function storeUsers(users: User[]) {
   localStorage.setItem(DB_KEY_USERS, JSON.stringify(users));
-}
-
-export async function getAuthUser(
-  username: string,
-  password: string,
-): Promise<AuthUser | undefined> {
-  const users = getUsersFromDB();
-  const user = find(users, { username, password });
-  await sleep();
-
-  return user
-    ? pick(user, ['id', 'name', 'surname', 'role']) as AuthUser
-    : undefined;
 }
 
 export function getLoggedInAuthUser(): AuthUser | undefined {
@@ -131,7 +75,7 @@ export function removeStoredAuthUser() {
   localStorage.removeItem(DB_KEY_AUTH_USER);
 }
 
-function getOrdersFromDB(): Order[] | [] {
+export function getOrdersFromDB(): Order[] | [] {
   const item = fetchItemFromLocalStorage(DB_KEY_ORDERS);
 
   if (!item) {
@@ -149,120 +93,6 @@ function getOrdersFromDB(): Order[] | [] {
 
 export function storeOrders(orders?: Order[]) {
   localStorage.setItem(DB_KEY_ORDERS, JSON.stringify(orders));
-}
-
-export async function getOrders(): Promise<Order[]> {
-  await sleep();
-
-  return getOrdersFromDB();
-}
-
-function getUpdatedOrderBooksList(
-  countOrdered: number,
-  book: Book,
-  orderBooks: OrderBook[],
-): OrderBook[] {
-  const orderBook: OrderBook = {
-    ...book,
-    countOrdered,
-  };
-
-  // first book in order
-  if (orderBooks.length === 0) {
-    return [
-      { ...orderBook },
-    ];
-  }
-
-  const editableOrderBookIndex = findIndex(orderBooks, { id: book.id });
-
-  // new book in order
-  if (editableOrderBookIndex === -1) {
-    return [
-      ...orderBooks,
-      { ...orderBook },
-    ];
-  }
-
-  // if count is 0 - remove book from the list
-  if (countOrdered === 0) {
-    return [
-      ...orderBooks.slice(0, editableOrderBookIndex),
-      ...orderBooks.slice(editableOrderBookIndex + 1),
-    ];
-  }
-
-  // updating existing book count
-  return [
-    ...orderBooks.slice(0, editableOrderBookIndex),
-    { ...orderBook },
-    ...orderBooks.slice(editableOrderBookIndex + 1),
-  ];
-}
-
-export async function getUpdatedOrders(
-  count: number,
-  book: Book,
-  userId: number,
-): Promise<Order[]> {
-  await sleep();
-  const orders = getOrdersFromDB();
-  const editableUserOrderIndex = findIndex(orders, { userId, status: ORDER_STATUS_TYPE.NEW });
-  const orderId = editableUserOrderIndex !== -1
-    ? orders[editableUserOrderIndex].id
-    : orders.length;
-  const orderBooks = editableUserOrderIndex !== -1 ? orders[editableUserOrderIndex].books : [];
-  const books = getUpdatedOrderBooksList(count, book, orderBooks);
-
-  const newOrder: Order = {
-    id: orderId,
-    userId,
-    status: ORDER_STATUS_TYPE.NEW,
-    books,
-  };
-
-  // first order
-  if (orders.length === 0) {
-    return [
-      { ...newOrder },
-    ];
-  }
-
-  // append new order
-  if (editableUserOrderIndex === -1) {
-    return [
-      ...orders,
-      { ...newOrder },
-    ];
-  }
-
-  // update existing one
-  return [
-    ...orders.slice(0, editableUserOrderIndex),
-    { ...newOrder },
-    ...orders.slice(editableUserOrderIndex + 1),
-  ];
-}
-
-export async function getUpdatedStatusOrders(
-  orderId: number,
-  status: ORDER_STATUS_TYPE,
-): Promise<Order[]> {
-  const orders = getOrdersFromDB();
-  const editableUserOrderIndex = findIndex(orders, { id: orderId });
-
-  const newOrder: Order = {
-    ...orders[editableUserOrderIndex],
-    status,
-  };
-
-  await sleep();
-
-  return [
-    ...orders.slice(0, editableUserOrderIndex),
-    { ...newOrder },
-    ...orders.slice(editableUserOrderIndex + 1),
-  ];
 }
 
 export const populateDatabase = () => {

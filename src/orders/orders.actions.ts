@@ -1,13 +1,11 @@
 import { Dispatch } from 'redux';
 import {
-  getOrders,
-  getUpdatedOrders,
-  getUpdatedStatusOrders,
   storeOrders,
 } from '../utils/database';
 import { LOAD_ORDERS, RESET_ORDERS_STATE, SET_ORDERS_LOADING } from './orders.actionsTypes';
 import { Book } from '../books/interfaces';
 import { ORDER_STATUS_TYPE } from './interfaces';
+import { getOrders, getUpdatedOrders, getUpdatedStatusOrders } from '../utils/api';
 
 
 export const loadOrders = (userId?: number) => async (dispatch: Dispatch) => {

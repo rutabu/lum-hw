@@ -1,6 +1,7 @@
 import { Dispatch } from 'redux';
 import { LOAD_BOOKS, SET_BOOKS_LOADING } from './books.actionsTypes';
-import { getBooks, getBooksWithRemovedBook, storeBooks } from '../utils/database';
+import { storeBooks } from '../utils/database';
+import { getBooks, getBooksWithRemovedBook } from '../utils/api';
 
 export const loadBooks = (onlyAvailable: boolean = true) => async (dispatch: Dispatch) => {
   const response = await getBooks();

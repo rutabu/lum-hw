@@ -6,15 +6,13 @@ import {
   SET_LOGIN_FAILED,
 } from './users.actionsTypes';
 import {
-  getAuthUser,
   getLoggedInAuthUser,
-  getUsers,
-  getUsersWithRemovedUser,
   removeStoredAuthUser,
   storeAuthUser,
   storeUsers,
 } from '../utils/database';
 import { AuthUser } from './interfaces';
+import { getAuthUser, getUsers, getUsersWithRemovedUser } from '../utils/api';
 
 export const loadUsers = () => async (dispatch: Dispatch) => {
   const users = await getUsers();

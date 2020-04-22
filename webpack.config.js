@@ -1,11 +1,17 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
-  entry: path.resolve(__dirname, 'src/index.tsx'),
+  entry: {
+    main: path.resolve(__dirname, 'src/index.tsx'),
+    BooksPage: path.resolve(__dirname, 'src/books/Books.tsx'),
+    OrdersPage: path.resolve(__dirname, 'src/orders/Orders.tsx'),
+    UsersPage: path.resolve(__dirname, 'src/users/Users.tsx'),
+  },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    filename: '[name].[contenthash:8].js',
     publicPath: '/'
   },
   module: {
@@ -29,6 +35,13 @@ module.exports = {
       template: 'public/index.html', //source html
       filename: './index.html',
       favicon: 'public/favicon.ico'
-    })
-  ]
+    }),
+    new webpack.HashedModuleIdsPlugin(),
+  ],
+  optimization: {
+    splitChunks: {
+      // include all types of chunks
+      chunks: 'all'
+    }
+  }
 };

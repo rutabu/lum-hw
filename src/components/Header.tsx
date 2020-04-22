@@ -15,7 +15,7 @@ import { useHistory } from 'react-router-dom';
 import { ThunkDispatch } from 'redux-thunk';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
-import { AppState } from '../redux/state';
+import { AppState, OrdersState } from '../redux/state';
 import Login from './Login';
 import { AuthUser } from '../users/interfaces';
 import {
@@ -24,7 +24,9 @@ import {
   userLogin,
   userLogout,
 } from '../users/users.actions';
-import { isUserAdmin, isUserClient } from '../users/functions';
+import { getUserId, isUserAdmin, isUserClient } from '../users/functions';
+import { loadOrders, resetOrdersState } from '../orders/orders.actions';
+import { getShoppingCartCount } from '../orders/functions';
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   root: {
@@ -44,6 +46,7 @@ export interface HeaderProps {
   isLoading: boolean,
   loginFailed: boolean,
   authUser?: AuthUser,
+  orders?: OrdersState,
 }
 
 const Header: FC<HeaderProps> = (props: HeaderProps) => {
@@ -52,6 +55,7 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
     loginFailed,
     authUser,
     dispatch,
+    orders,
   } = props;
   const history = useHistory();
   const classes = useStyles();
@@ -60,6 +64,11 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
 
   if (!authUser) {
     dispatch(loadStoredAuthUser());
+  }
+
+  if (isUserClient(authUser) && (!orders || !orders.list)) {
+    const userId = getUserId(authUser);
+    dispatch(loadOrders(userId));
   }
 
   const handleMenu = (event: MouseEvent<HTMLElement>) => {
@@ -77,11 +86,13 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
 
   const handleUserLogout = () => {
     dispatch(userLogout());
+    dispatch(resetOrdersState());
     history.push('/');
   };
 
   const isAdmin = isUserAdmin(authUser);
   const isClient = isUserClient(authUser);
+  const choppingCartCount = getShoppingCartCount(orders);
 
   return (
     <div className={classes.root}>
@@ -156,7 +167,7 @@ const Header: FC<HeaderProps> = (props: HeaderProps) => {
           )}
           {isClient && (
             <IconButton aria-label="Shopping cart" color="inherit" onClick={() => history.push('/order/new')}>
-              <Badge badgeContent={4} color="secondary">
+              <Badge badgeContent={choppingCartCount} color="secondary">
                 <ShoppingCartRounded />
               </Badge>
             </IconButton>
@@ -172,6 +183,7 @@ const mapStateToProps = (state: AppState) => ({
   isLoading: state.users.isLoading,
   loginFailed: state.users.loginFailed,
   authUser: state.users.authUser,
+  orders: state.orders,
 });
 // @TODO add return type
 const mapDispatchToProps = (dispatch: ThunkDispatch<AppState, void, AnyAction>) => ({

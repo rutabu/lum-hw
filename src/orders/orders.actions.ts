@@ -5,7 +5,7 @@ import {
   getUpdatedStatusOrders,
   storeOrders,
 } from '../utils/database';
-import { LOAD_ORDERS, SET_ORDERS_LOADING } from './orders.actionsTypes';
+import { LOAD_ORDERS, RESET_ORDERS_STATE, SET_ORDERS_LOADING } from './orders.actionsTypes';
 import { Book } from '../books/interfaces';
 import { ORDER_STATUS_TYPE } from './interfaces';
 
@@ -60,6 +60,12 @@ export const updateOrderStatus = (
   dispatch({
     type: LOAD_ORDERS,
     orders,
+  });
+};
+
+export const resetOrdersState = () => async (dispatch: Dispatch) => {
+  dispatch({
+    type: RESET_ORDERS_STATE,
   });
 };
 

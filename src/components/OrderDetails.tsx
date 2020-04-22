@@ -16,8 +16,8 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import { Link } from 'react-router-dom';
 import Alert from '@material-ui/lab/Alert';
 import { Book } from '../books/interfaces';
-import { Order, ORDER_STATUS_TYPE } from './interfaces';
-import Counter from '../components/Counter';
+import { Order, ORDER_STATUS_TYPE } from '../orders/interfaces';
+import Counter from './Counter';
 
 interface OrderDetailsProps {
   order: Order,
@@ -38,7 +38,7 @@ const OrderDetails: FC<OrderDetailsProps> = ({
   } = order;
 
   if (books.length === 0 && !isLoading) {
-    return <Alert variant="filled" severity="info">Basker is empty</Alert>;
+    return <Alert variant="filled" severity="info">Basket is empty</Alert>;
   }
 
   return (

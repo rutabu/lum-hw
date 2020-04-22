@@ -2,6 +2,7 @@ import {
   OrdersActionTypes,
   LOAD_ORDERS,
   SET_ORDERS_LOADING,
+  RESET_ORDERS_STATE,
 } from './orders.actionsTypes';
 import { OrdersState } from '../redux/state';
 
@@ -24,6 +25,12 @@ export default function OrdersReducer(
       return {
         ...state,
         isLoading: action.isLoading,
+      };
+    }
+    case RESET_ORDERS_STATE: {
+      return {
+        ...state,
+        list: undefined,
       };
     }
     default:

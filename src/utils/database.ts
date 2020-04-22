@@ -13,48 +13,85 @@ function fetchItemFromLocalStorage(key: string) {
   return localStorage.getItem(key);
 }
 
-export async function getBooks(): Promise<Book[] | undefined> {
-  await sleep();
+function getBooksFromDB(): Book[] {
   const item = fetchItemFromLocalStorage(DB_KEY_BOOKS);
 
   if (!item) {
-    return undefined;
+    return [];
   }
 
   const books: Book[] = JSON.parse(item);
 
   if (!books) {
-    return undefined;
+    return [];
   }
 
   return books;
 }
 
-export async function updateBooksList(books: Book[]) {
+export async function getBooks(): Promise<Book[]> {
   await sleep();
-  localStorage.setItem(DB_KEY_BOOKS, JSON.stringify(books));
-  // update was successful
-  return true;
+  return getBooksFromDB();
 }
 
-function getUsersFromDB(): User[] | undefined {
+export async function getBooksWithRemovedBook(bookId: number): Promise<Book[]> {
+  await sleep();
+  const books = getBooksFromDB();
+
+  const editableBookIndex = findIndex(books, { id: bookId });
+
+  if (editableBookIndex === -1) {
+    return books;
+  }
+
+  return [
+    ...books.slice(0, editableBookIndex),
+    ...books.slice(editableBookIndex + 1),
+  ];
+}
+
+export function storeBooks(books: Book[]) {
+  localStorage.setItem(DB_KEY_BOOKS, JSON.stringify(books));
+}
+
+function getUsersFromDB(): User[] {
   const item = fetchItemFromLocalStorage(DB_KEY_USERS);
 
   if (!item) {
-    return undefined;
+    return [];
   }
 
   const users: User[] = JSON.parse(item);
 
   if (!users) {
-    return undefined;
+    return [];
   }
 
   return users;
 }
 
-export async function getUsers(): Promise<User[] | undefined> {
+export async function getUsers(): Promise<User[]> {
   return getUsersFromDB();
+}
+
+export async function getUsersWithRemovedUser(userId: number): Promise<User[]> {
+  await sleep();
+  const users = getUsersFromDB();
+
+  const editableUserIndex = findIndex(users, { id: userId });
+
+  if (editableUserIndex === -1) {
+    return users;
+  }
+
+  return [
+    ...users.slice(0, editableUserIndex),
+    ...users.slice(editableUserIndex + 1),
+  ];
+}
+
+export function storeUsers(users: User[]) {
+  localStorage.setItem(DB_KEY_USERS, JSON.stringify(users));
 }
 
 export async function getAuthUser(
@@ -92,13 +129,6 @@ export function storeAuthUser(user: AuthUser) {
 
 export function removeStoredAuthUser() {
   localStorage.removeItem(DB_KEY_AUTH_USER);
-}
-
-export async function updateUsersList(users: User[]) {
-  await sleep();
-  localStorage.setItem(DB_KEY_USERS, JSON.stringify(users));
-  // update was successful
-  return true;
 }
 
 function getOrdersFromDB(): Order[] | [] {
@@ -240,32 +270,32 @@ export const populateDatabase = () => {
     const books: Book[] = [
       {
         id: 0,
-        title: 'First book',
-        author: 'John Smith',
+        title: 'Fates and Furies',
+        author: 'Lauren Groff',
         publishedDate: 2015,
         bookCover: 'https://cdn.pastemagazine.com/www/system/images/photo_albums/best-book-covers-2015/large/1fatesfuries400.jpg',
         quantity: 5,
       },
       {
         id: 1,
-        title: 'Second book',
-        author: 'Jane Doe',
+        title: 'The Water Knife',
+        author: 'Paolo Bacigalupi',
         publishedDate: 2019,
         bookCover: 'https://cdn.pastemagazine.com/www/system/images/photo_albums/best-book-covers-2015/large/1waterknife400.jpg',
         quantity: 3,
       },
       {
         id: 2,
-        title: 'Second book',
-        author: 'Jane Doe',
+        title: 'The Last Pilot',
+        author: 'Benjamin Johncock',
         publishedDate: 2019,
         bookCover: 'https://cdn.pastemagazine.com/www/system/images/photo_albums/best-book-covers-2015/large/1thelastpilot400.png',
         quantity: 3,
       },
       {
         id: 3,
-        title: 'Third book',
-        author: 'Mark Tomson',
+        title: 'Book of Numbers',
+        author: 'Joshua Cohen',
         publishedDate: 2010,
         bookCover: 'https://cdn.pastemagazine.com/www/system/images/photo_albums/best-book-covers-2015/large/1bookofnumbers400.jpg',
         quantity: 7,
@@ -273,10 +303,10 @@ export const populateDatabase = () => {
       {
         id: 4,
         title: 'City on Fire',
-        author: 'Mark Tomson',
+        author: 'Garth Risk Hallberg',
         publishedDate: 2010,
         bookCover: 'https://cdn.pastemagazine.com/www/system/images/photo_albums/best-book-covers-2015/large/1cityonfire400.jpg',
-        quantity: 7,
+        quantity: 2,
       },
       {
         id: 5,
@@ -284,7 +314,7 @@ export const populateDatabase = () => {
         author: 'Louisa Hall',
         publishedDate: 2010,
         bookCover: 'https://cdn.pastemagazine.com/www/system/images/photo_albums/best-book-covers-2015/large/1speak400.png',
-        quantity: 7,
+        quantity: 10,
       },
     ];
     localStorage.setItem(DB_KEY_BOOKS, JSON.stringify(books));

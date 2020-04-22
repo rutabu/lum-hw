@@ -9,8 +9,10 @@ import {
   getAuthUser,
   getLoggedInAuthUser,
   getUsers,
+  getUsersWithRemovedUser,
   removeStoredAuthUser,
   storeAuthUser,
+  storeUsers,
 } from '../utils/database';
 import { AuthUser } from './interfaces';
 
@@ -63,4 +65,14 @@ export const userLogout = () => async (dispatch: Dispatch) => {
   removeStoredAuthUser();
 
   dispatch(setAuthUser(undefined));
+};
+
+export const deleteUser = (userId: number) => async (dispatch: Dispatch) => {
+  const users = await getUsersWithRemovedUser(userId);
+  storeUsers(users);
+
+  dispatch({
+    type: LOAD_USERS,
+    users,
+  });
 };

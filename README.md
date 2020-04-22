@@ -12,6 +12,8 @@ or one of 2 clients:<br />
 `username: client1, password: client1`<br />
 `username: client2, password: client2`
 
+Special thank you for book covers to website to <a href="https://www.pastemagazine.com/books/the-30-best-book-covers-of-2015/">Paste Magazine</a>
+
 This is still work in progress so some functionality is still missing.
 
 ## Before starting the app
